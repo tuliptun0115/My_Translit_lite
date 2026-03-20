@@ -3,7 +3,7 @@
  * 負責處理語言偵測與母語近似音譯音生成。
  */
 
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
 export interface TranslitResult {
   original: string;
@@ -12,6 +12,7 @@ export interface TranslitResult {
 }
 
 export async function fetchTransliteration(text: string, apiKey: string): Promise<TranslitResult> {
+  const cleanKey = apiKey.trim().replace(/[\s\u200B-\u200D\uFEFF]/g, "");
   // 增加更嚴格的 Prompt 確保回傳純 JSON
   const prompt = `你是一個專業的語音譯音專家。請偵測以下輸入文字的語言，並將其轉換為最接近發音的「中文譯音」（以漢字表示，這也被稱為母語近似音標註）。
 
@@ -26,7 +27,7 @@ export async function fetchTransliteration(text: string, apiKey: string): Promis
 輸入：${text}
 `;
 
-  const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+  const response = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(cleanKey)}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -62,7 +63,8 @@ export async function fetchTransliteration(text: string, apiKey: string): Promis
   }
 }
 export async function listModels(apiKey: string) {
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+  const cleanKey = apiKey.trim().replace(/[\s\u200B-\u200D\uFEFF]/g, "");
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(cleanKey)}`);
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error?.message || "無法取得模型列表");

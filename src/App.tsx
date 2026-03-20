@@ -35,7 +35,11 @@ function App() {
   }, [])
 
   const handleSaveKey = () => {
-    const trimmedKey = tempKey.trim()
+    const trimmedKey = tempKey.trim().replace(/[\s\u200B-\u200D\uFEFF]/g, "")
+    if (!trimmedKey) {
+      setError("金鑰不能為空")
+      return
+    }
     localStorage.setItem('gemini_api_key', trimmedKey)
     setApiKey(trimmedKey)
     setShowSettings(false)
@@ -277,7 +281,7 @@ function App() {
                     </button>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.8 (Final-Fix)</p>
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.9 (Key-Sanitizer)</p>
                     <button 
                       onClick={handleCheckModels}
                       disabled={isCheckingModels}
@@ -286,6 +290,20 @@ function App() {
                       {isCheckingModels ? "偵測中..." : "偵測可用模型列表"}
                     </button>
                   </div>
+
+                  {tempKey && (
+                    <p className="text-[8px] text-gray-400 px-1">
+                      首四碼: <span className="text-pink-400 font-mono">{tempKey.trim().slice(0, 4)}</span>... 
+                      末四碼: <span className="text-pink-400 font-mono">{tempKey.trim().slice(-4)}</span>
+                    </p>
+                  )}
+
+                  {tempKey && (
+                    <p className="text-[8px] text-gray-400 px-1">
+                      首四碼: <span className="text-pink-400 font-mono">{tempKey.trim().slice(0, 4)}</span>... 
+                      末四碼: <span className="text-pink-400 font-mono">{tempKey.trim().slice(-4)}</span>
+                    </p>
+                  )}
                   
                   {availableModels.length > 0 && (
                     <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 max-h-32 overflow-y-auto space-y-1">
@@ -342,7 +360,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.8 (Stable-Verified)</div>
+        <div className="opacity-50">Version: 0.1.9 (Key-Sanitizer)</div>
       </footer>
     </div>
   )
