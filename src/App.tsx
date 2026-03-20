@@ -261,7 +261,7 @@ function App() {
                     </button>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.3 (Stable-1.5)</p>
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.5 (Stable-1.5)</p>
                     <p className="text-[9px] text-red-400 font-bold">如持續報錯請檢查金鑰正確性</p>
                   </div>
                   <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
@@ -301,7 +301,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.4 (Error-Body-Capture)</div>
+        <div className="opacity-50">Version: 0.1.5 (Final-Stable-1.5)</div>
       </footer>
     </div>
   )
