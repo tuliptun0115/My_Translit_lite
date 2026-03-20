@@ -11,8 +11,9 @@ export interface TranslitResult {
   languageCode: string;
 }
 
-export async function fetchTransliteration(text: string, apiKey: string): Promise<TranslitResult> {
+export async function fetchTransliteration(text: string, apiKey: string, modelId: string = "gemini-1.5-flash"): Promise<TranslitResult> {
   const cleanKey = apiKey.trim().replace(/[\s\u200B-\u200D\uFEFF]/g, "");
+  const dynamicUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent`;
   // 增加更嚴格的 Prompt 確保回傳純 JSON
   const prompt = `你是一個專業的語音譯音專家。請偵測以下輸入文字的語言，並將其轉換為最接近發音的「中文譯音」（以漢字表示，這也被稱為母語近似音標註）。
 
