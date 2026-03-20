@@ -19,14 +19,16 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [tempKey, setTempKey] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash')
 
-  // 初始化讀取 LocalStorage 或 Env
   useEffect(() => {
     const savedKey = localStorage.getItem('gemini_api_key')
+    const savedModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash'
     const envKey = import.meta.env.VITE_GEMINI_API_KEY
     const initialKey = savedKey || envKey || ''
     setApiKey(initialKey)
     setTempKey(initialKey)
+    setSelectedModel(savedModel)
     
     // 如果沒有 Key，主動提示設定 (延遲一下確保 UI 已載入)
     if (!initialKey) {
@@ -41,6 +43,7 @@ function App() {
       return
     }
     localStorage.setItem('gemini_api_key', trimmedKey)
+    localStorage.setItem('gemini_model', selectedModel)
     setApiKey(trimmedKey)
     setShowSettings(false)
     setError(null)
@@ -60,7 +63,7 @@ function App() {
     setErrorDetail(null)
     
     try {
-      const res = await fetchTransliteration(input, apiKey)
+      const res = await fetchTransliteration(input, apiKey, selectedModel)
       setResult(res)
       speak(res.original, res.languageCode)
     } catch (err: any) {
@@ -281,22 +284,15 @@ function App() {
                     </button>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.9 (Key-Sanitizer)</p>
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.10 (Model-Selector)</p>
                     <button 
                       onClick={handleCheckModels}
                       disabled={isCheckingModels}
                       className="text-[9px] text-pink-500 font-bold underline hover:text-pink-700 disabled:opacity-50"
                     >
-                      {isCheckingModels ? "偵測中..." : "偵測可用模型列表"}
+                      {isCheckingModels ? "偵測中..." : "重新偵測可用模型"}
                     </button>
                   </div>
-
-                  {tempKey && (
-                    <p className="text-[8px] text-gray-400 px-1">
-                      首四碼: <span className="text-pink-400 font-mono">{tempKey.trim().slice(0, 4)}</span>... 
-                      末四碼: <span className="text-pink-400 font-mono">{tempKey.trim().slice(-4)}</span>
-                    </p>
-                  )}
 
                   {tempKey && (
                     <p className="text-[8px] text-gray-400 px-1">
@@ -307,13 +303,24 @@ function App() {
                   
                   {availableModels.length > 0 && (
                     <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 max-h-32 overflow-y-auto space-y-1">
-                      <p className="text-[9px] font-bold text-gray-500 mb-1">✅ 偵測到可用模型：</p>
-                      {availableModels.slice(0, 15).map((m, i) => (
-                        <div key={i} className="text-[8px] text-gray-400 font-mono break-all bg-white p-1 rounded flex justify-between">
-                          <span>{m.name.split('/').pop()}</span>
-                          <span className="text-[7px] text-green-400">OK</span>
-                        </div>
-                      ))}
+                      <p className="text-[9px] font-bold text-gray-500 mb-1">✅ 偵測成功！請點選下方模型進行切換：</p>
+                      {availableModels.slice(0, 15).map((m, i) => {
+                        const mName = m.name.split('/').pop();
+                        const isSelected = selectedModel === mName;
+                        return (
+                          <button 
+                            key={i} 
+                            onClick={() => setSelectedModel(mName)}
+                            className={cn(
+                              "w-full text-[8px] font-mono break-all p-2 rounded flex justify-between items-center transition-all",
+                              isSelected ? "bg-pink-500 text-white shadow-md scale-[1.02]" : "bg-white text-gray-400 border border-gray-100 hover:border-pink-200"
+                            )}
+                          >
+                            <span>{mName}</span>
+                            <span>{isSelected ? "已選取" : "點擊選取"}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -360,7 +367,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.9 (Key-Sanitizer)</div>
+        <div className="opacity-50">Version: 0.1.10 (Model-Selector)</div>
       </footer>
     </div>
   )

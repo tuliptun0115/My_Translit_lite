@@ -27,7 +27,7 @@ export async function fetchTransliteration(text: string, apiKey: string): Promis
 輸入：${text}
 `;
 
-  const response = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(cleanKey)}`, {
+  const response = await fetch(`${dynamicUrl}?key=${encodeURIComponent(cleanKey)}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
