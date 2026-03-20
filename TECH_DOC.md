@@ -14,9 +14,9 @@ src/
 
 ## 2. API 規格
 
-### 2.1 Gemini 2.5 Flash API
+### 2.1 Gemini 1.5 Flash API
 *   **用途**：偵測語言並生成譯音。
-*   **端點**：`v1beta/models/gemini-2.5-flash:generateContent`
+*   **端點**：`v1/models/gemini-1.5-flash:generateContent` (Stable)
 *   **安全性機制**：
     *   **LocalStorage 儲存**：API Key 不再硬編碼於前端 bundle 中，改由使用者手動輸入並存於本地瀏覽器。
     *   **環境變數回退**：本地開發仍支援 `.env.local`。
