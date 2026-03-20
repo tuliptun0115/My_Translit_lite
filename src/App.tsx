@@ -277,11 +277,11 @@ function App() {
                     </button>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.7 (Deep-Diagnostic)</p>
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.8 (Final-Fix)</p>
                     <button 
                       onClick={handleCheckModels}
                       disabled={isCheckingModels}
-                      className="text-[9px] text-pink-500 font-bold underline hover:text-pink-700"
+                      className="text-[9px] text-pink-500 font-bold underline hover:text-pink-700 disabled:opacity-50"
                     >
                       {isCheckingModels ? "偵測中..." : "偵測可用模型列表"}
                     </button>
@@ -289,12 +289,20 @@ function App() {
                   
                   {availableModels.length > 0 && (
                     <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 max-h-32 overflow-y-auto space-y-1">
-                      <p className="text-[9px] font-bold text-gray-500 mb-1">可用模型：</p>
-                      {availableModels.slice(0, 10).map((m, i) => (
-                        <div key={i} className="text-[8px] text-gray-400 font-mono break-all bg-white p-1 rounded">
-                          {m.name.split('/').pop()}
+                      <p className="text-[9px] font-bold text-gray-500 mb-1">✅ 偵測到可用模型：</p>
+                      {availableModels.slice(0, 15).map((m, i) => (
+                        <div key={i} className="text-[8px] text-gray-400 font-mono break-all bg-white p-1 rounded flex justify-between">
+                          <span>{m.name.split('/').pop()}</span>
+                          <span className="text-[7px] text-green-400">OK</span>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {isCheckingModels === false && availableModels.length === 0 && !error && (
+                    <div className="bg-red-50 p-3 rounded-xl border border-red-100">
+                      <p className="text-[10px] text-red-500 font-bold">⚠️ 偵測失敗：此金鑰未開啟任何 AI 模型權限。</p>
+                      <p className="text-[9px] text-red-400 mt-1">請確認是否在 AI Studio 點擊了 "Create API key in NEW project"。</p>
                     </div>
                   )}
                   <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
@@ -334,7 +342,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.7 (Deep-Diagnostic)</div>
+        <div className="opacity-50">Version: 0.1.8 (Stable-Verified)</div>
       </footer>
     </div>
   )
