@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Languages, Volume2, Sparkles, RefreshCw, Settings, X, Key, Eye, EyeOff } from 'lucide-react'
+import { Languages, Volume2, Sparkles, RefreshCw, Settings, X, Key } from 'lucide-react'
 import { cn } from './utils/cn'
 import { motion, AnimatePresence } from 'framer-motion'
 import { fetchTransliteration, type TranslitResult } from './services/gemini'
@@ -301,7 +301,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.3 (Stable-1.5)</div>
+        <div className="opacity-50">Version: 0.1.4 (Error-Body-Capture)</div>
       </footer>
     </div>
   )
