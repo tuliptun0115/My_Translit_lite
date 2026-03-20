@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Languages, Volume2, Sparkles, RefreshCw, Settings, X, Key } from 'lucide-react'
 import { cn } from './utils/cn'
 import { motion, AnimatePresence } from 'framer-motion'
-import { fetchTransliteration, type TranslitResult } from './services/gemini'
+import { fetchTransliteration, listModels, type TranslitResult } from './services/gemini'
 import { speak, preWarmTTS } from './services/tts'
 
 function App() {
@@ -11,6 +11,8 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const [result, setResult] = useState<TranslitResult | null>(null)
+  const [availableModels, setAvailableModels] = useState<any[]>([])
+  const [isCheckingModels, setIsCheckingModels] = useState(false)
   
   // API Key 狀態管理
   const [apiKey, setApiKey] = useState('')
@@ -73,6 +75,20 @@ function App() {
       }
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleCheckModels = async () => {
+    if (!tempKey.trim()) return
+    setIsCheckingModels(true)
+    setError(null)
+    try {
+      const models = await listModels(tempKey.trim())
+      setAvailableModels(models)
+    } catch (err: any) {
+      setError(`取得模型列表失敗: ${err.message}`)
+    } finally {
+      setIsCheckingModels(false)
     }
   }
 
@@ -261,9 +277,26 @@ function App() {
                     </button>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.5 (Stable-1.5)</p>
-                    <p className="text-[9px] text-red-400 font-bold">如持續報錯請檢查金鑰正確性</p>
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.7 (Deep-Diagnostic)</p>
+                    <button 
+                      onClick={handleCheckModels}
+                      disabled={isCheckingModels}
+                      className="text-[9px] text-pink-500 font-bold underline hover:text-pink-700"
+                    >
+                      {isCheckingModels ? "偵測中..." : "偵測可用模型列表"}
+                    </button>
                   </div>
+                  
+                  {availableModels.length > 0 && (
+                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 max-h-32 overflow-y-auto space-y-1">
+                      <p className="text-[9px] font-bold text-gray-500 mb-1">可用模型：</p>
+                      {availableModels.slice(0, 10).map((m, i) => (
+                        <div key={i} className="text-[8px] text-gray-400 font-mono break-all bg-white p-1 rounded">
+                          {m.name.split('/').pop()}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
                     <p className="text-[10px] text-pink-600 leading-relaxed font-medium">
                       🔒 <b>隱私保護：</b> 金鑰僅會存放在您手機的瀏覽器中，不會傳送到任何伺服器，也不會被 GitHub 記錄。
@@ -301,7 +334,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.5 (Final-Stable-1.5)</div>
+        <div className="opacity-50">Version: 0.1.7 (Deep-Diagnostic)</div>
       </footer>
     </div>
   )

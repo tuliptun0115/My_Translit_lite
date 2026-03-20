@@ -61,3 +61,11 @@ export async function fetchTransliteration(text: string, apiKey: string): Promis
     throw new Error("無法解析 AI 回傳的 JSON 格式");
   }
 }
+export async function listModels(apiKey: string) {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error?.message || "無法取得模型列表");
+  }
+  return data.models || [];
+}
