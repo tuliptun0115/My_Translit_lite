@@ -30,11 +30,34 @@ function App() {
     setTempKey(initialKey)
     setSelectedModel(savedModel)
     
+    // 如果有 Key 但模型是預設的，主動嘗試偵測一個活的模型
+    if (initialKey && savedModel === 'gemini-2.0-flash') {
+      handleCheckModelsDirectly(initialKey);
+    }
+
     // 如果沒有 Key，主動提示設定 (延遲一下確保 UI 已載入)
     if (!initialKey) {
       setTimeout(() => setShowSettings(true), 500)
     }
   }, [])
+
+  const handleCheckModelsDirectly = async (key: string) => {
+    setIsCheckingModels(true);
+    try {
+      const models = await listModels(key);
+      setAvailableModels(models);
+      const topModels = models.slice(0, 5);
+      for (const m of topModels) {
+        const mName = m.name.split('/').pop();
+        if (await testModel(key, mName)) {
+          setSelectedModel(mName);
+          localStorage.setItem('gemini_model', mName);
+          break;
+        }
+      }
+    } catch (e) {}
+    setIsCheckingModels(false);
+  }
 
   const handleSaveKey = () => {
     const trimmedKey = tempKey.trim().replace(/[\s\u200B-\u200D\uFEFF]/g, "")
@@ -149,8 +172,8 @@ function App() {
         >
           <Languages className="w-8 h-8 text-pink-500" />
         </motion.div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight px-4">My Translit Lite</h1>
-        <p className="text-pink-600 font-medium">母語近似音標註工具</p>
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight px-4">好好唸</h1>
+        <p className="text-pink-600 font-medium">語言學習．母語標註．發音練習</p>
       </header>
 
       <main className="w-full max-w-2xl bg-white rounded-3xl shadow-xl p-6 sm:p-8 space-y-6">
@@ -304,7 +327,7 @@ function App() {
                     </button>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.15 (Self-Healing)</p>
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.16 (Brand-New)</p>
                     <button 
                       onClick={handleCheckModels}
                       disabled={isCheckingModels}
@@ -401,7 +424,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.15 (Self-Healing)</div>
+        <div className="opacity-50">Version: 0.1.16 (Brand-New)</div>
       </footer>
     </div>
   )
