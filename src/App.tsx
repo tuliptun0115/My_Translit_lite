@@ -284,7 +284,7 @@ function App() {
                     </button>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.10 (Model-Selector)</p>
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.11 (Force-Clean)</p>
                     <button 
                       onClick={handleCheckModels}
                       disabled={isCheckingModels}
@@ -330,30 +330,44 @@ function App() {
                       <p className="text-[9px] text-red-400 mt-1">請確認是否在 AI Studio 點擊了 "Create API key in NEW project"。</p>
                     </div>
                   )}
-                  <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
+                  <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-100 space-y-2">
                     <p className="text-[10px] text-pink-600 leading-relaxed font-medium">
-                      🔒 <b>隱私保護：</b> 金鑰僅會存放在您手機的瀏覽器中，不會傳送到任何伺服器，也不會被 GitHub 記錄。
+                      🔒 <b>隱私保護：</b> 金鑰僅會存放在您手機中，不會傳送到 GitHub 或任何伺服器。
+                    </p>
+                    <p className="text-[9px] text-pink-400 leading-relaxed">
+                      📱 <b>手機版不能用？</b> 請點擊下方「強制環境修復」以清除過期快取並重新載入。
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-3">
-                   <button 
-                    onClick={() => {
-                        localStorage.removeItem('gemini_api_key');
-                        setTempKey('');
-                        setApiKey('');
-                        setShowSettings(false);
-                    }}
-                    className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-95"
-                  >
-                    清除重設
-                  </button>
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => {
+                          localStorage.clear();
+                          sessionStorage.clear();
+                          window.location.href = window.location.pathname + '?t=' + Date.now();
+                      }}
+                      className="flex-1 py-3 bg-red-50 text-red-500 rounded-2xl font-bold text-xs hover:bg-red-100 transition-all active:scale-95 border border-red-100"
+                    >
+                      強制環境修復
+                    </button>
+                    <button 
+                      onClick={() => {
+                          localStorage.removeItem('gemini_api_key');
+                          setTempKey('');
+                          setApiKey('');
+                      }}
+                      className="flex-1 py-3 bg-gray-100 text-gray-500 rounded-2xl font-bold text-xs hover:bg-gray-200 transition-all active:scale-95"
+                    >
+                      僅清除金鑰
+                    </button>
+                  </div>
                   <button 
                     onClick={handleSaveKey}
-                    className="flex-[2] py-4 bg-gray-900 text-white rounded-2xl font-bold text-lg hover:bg-black transition-all shadow-xl active:scale-95 shadow-gray-200"
+                    className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-lg hover:bg-black transition-all shadow-xl active:scale-95 shadow-gray-200"
                   >
-                    儲存變更
+                    儲存變更並關閉
                   </button>
                 </div>
               </div>
@@ -367,7 +381,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.10 (Model-Selector)</div>
+        <div className="opacity-50">Version: 0.1.11 (Force-Clean)</div>
       </footer>
     </div>
   )
