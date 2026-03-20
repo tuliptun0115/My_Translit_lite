@@ -69,7 +69,8 @@ function App() {
     } catch (err: any) {
       console.error('API Error:', err)
       const errStr = err.toString()
-      setErrorDetail(errStr)
+      const keyPrefix = apiKey ? `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}` : "無金鑰"
+      setErrorDetail(`[金鑰末四碼: ${apiKey.slice(-4)}] ${errStr}`)
 
       if (errStr.includes('401') || errStr.toLowerCase().includes('key not valid') || errStr.includes('403')) {
         setError('API Key 無效或權限不足，請檢查設定。')
@@ -289,7 +290,7 @@ function App() {
                     </button>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.12 (Auto-Select)</p>
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.13 (Key-Transparency)</p>
                     <button 
                       onClick={handleCheckModels}
                       disabled={isCheckingModels}
@@ -386,7 +387,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.12 (Auto-Select)</div>
+        <div className="opacity-50">Version: 0.1.13 (Key-Transparency)</div>
       </footer>
     </div>
   )
