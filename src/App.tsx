@@ -9,6 +9,7 @@ function App() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const [result, setResult] = useState<TranslitResult | null>(null)
   
   // API Key 狀態管理
@@ -24,17 +25,19 @@ function App() {
     setApiKey(initialKey)
     setTempKey(initialKey)
     
-    // 如果沒有 Key，主動提示設定
+    // 如果沒有 Key，主動提示設定 (延遲一下確保 UI 已載入)
     if (!initialKey) {
-      setShowSettings(true)
+      setTimeout(() => setShowSettings(true), 500)
     }
   }, [])
 
   const handleSaveKey = () => {
-    localStorage.setItem('gemini_api_key', tempKey)
-    setApiKey(tempKey)
+    const trimmedKey = tempKey.trim()
+    localStorage.setItem('gemini_api_key', trimmedKey)
+    setApiKey(trimmedKey)
     setShowSettings(false)
     setError(null)
+    setErrorDetail(null)
   }
 
   const handleTransliterate = async () => {
@@ -47,17 +50,25 @@ function App() {
     preWarmTTS()
     setIsLoading(true)
     setError(null)
+    setErrorDetail(null)
     
     try {
       const res = await fetchTransliteration(input, apiKey)
       setResult(res)
       speak(res.original, res.languageCode)
     } catch (err: any) {
-      console.error(err)
-      if (err.message.includes('401') || err.message.includes('key not valid')) {
-        setError('API Key 無效或授權錯誤，請點擊右上角設定確認。')
+      console.error('API Error:', err)
+      const errStr = err.toString()
+      setErrorDetail(errStr)
+
+      if (errStr.includes('401') || errStr.toLowerCase().includes('key not valid') || errStr.includes('403')) {
+        setError('API Key 無效或權限不足，請檢查設定。')
+      } else if (errStr.includes('404')) {
+        setError('找不到 AI 模型，可能是型號名稱不正確，請回報給技術夥伴。')
+      } else if (errStr.includes('TypeError') || errStr.includes('Failed to fetch')) {
+        setError('連線被阻擋或網路不穩定，請確認手機是否可連至 Google。')
       } else {
-        setError('哎呀！連線出了一點小問題，請稍後再試一次吧 🌸')
+        setError('哎呀！連線出了一點小問題，請點擊下方詳情查看。🌸')
       }
     } finally {
       setIsLoading(false)
@@ -71,16 +82,19 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-pink-50 flex flex-col items-center justify-center p-4 sm:p-8 font-sans relative">
-      {/* 設定按鈕 */}
-      <button 
-        onClick={() => setShowSettings(true)}
-        className="absolute top-6 right-6 p-3 bg-white rounded-full shadow-lg text-pink-400 hover:text-pink-600 transition-all hover:rotate-90"
-      >
-        <Settings className="w-6 h-6" />
-      </button>
+    <div className="min-h-screen bg-pink-50 flex flex-col items-center justify-center p-4 sm:p-8 font-sans relative overflow-x-hidden">
+      {/* 設定按鈕 - 行動端更安全的位置 */}
+      <div className="fixed top-4 right-4 z-40">
+        <button 
+          onClick={() => setShowSettings(true)}
+          className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-lg text-pink-400 hover:text-pink-600 transition-all hover:rotate-90 active:scale-90"
+          aria-label="Settings"
+        >
+          <Settings className="w-6 h-6" />
+        </button>
+      </div>
 
-      <header className="mb-12 text-center">
+      <header className="mb-8 sm:mb-12 text-center pt-8">
         <motion.div 
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -88,20 +102,28 @@ function App() {
         >
           <Languages className="w-8 h-8 text-pink-500" />
         </motion.div>
-        <h1 className="text-4xl font-bold text-gray-900 tracking-tight">My Translit Lite</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight px-4">My Translit Lite</h1>
         <p className="text-pink-600 font-medium">母語近似音標註工具</p>
       </header>
 
-      <main className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+      <main className="w-full max-w-2xl bg-white rounded-3xl shadow-xl p-6 sm:p-8 space-y-6">
         <section className="space-y-2">
-          <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider px-1">
-            輸入原文 (各國語言)
-          </label>
+          <div className="flex justify-between items-center px-1">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              輸入原文 (各國語言)
+            </label>
+            {apiKey && (
+              <span className="text-[10px] text-green-400 font-bold flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                API 已就緒
+              </span>
+            )}
+          </div>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="在此輸入想要學習發音的單字或句子..."
-            className="w-full h-32 p-4 text-lg border-2 border-pink-100 rounded-xl focus:border-pink-500 focus:outline-none transition-colors resize-none placeholder-pink-200 text-gray-800"
+            className="w-full h-32 p-4 text-lg border-2 border-pink-50 rounded-2xl focus:border-pink-500 focus:outline-none transition-all resize-none placeholder-pink-200 text-gray-800 bg-gray-50/30"
           />
         </section>
 
@@ -109,7 +131,7 @@ function App() {
           onClick={handleTransliterate}
           disabled={isLoading || !input.trim()}
           className={cn(
-            "w-full py-4 bg-pink-500 text-white rounded-full font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
+            "w-full py-4 bg-pink-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-pink-100 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
             !isLoading && "hover:bg-pink-600 hover:shadow-pink-200"
           )}
         >
@@ -126,40 +148,58 @@ function App() {
         <AnimatePresence>
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="p-5 bg-red-50 text-red-600 rounded-2xl border border-red-100 space-y-2"
             >
-              {error}
+              <div className="font-bold flex items-center gap-2">
+                <X className="w-5 h-5" />
+                {error}
+              </div>
+              {errorDetail && (
+                <details className="text-[10px] opacity-70 cursor-pointer">
+                  <summary className="hover:underline">查看技術錯誤詳情</summary>
+                  <div className="mt-2 p-2 bg-red-100/50 rounded-lg font-mono break-all">
+                    {errorDetail}
+                  </div>
+                </details>
+              )}
+              <button 
+                onClick={() => setShowSettings(true)}
+                className="text-xs font-bold underline hover:text-red-800"
+              >
+                檢查 API Key 設定 →
+              </button>
             </motion.div>
           )}
 
-          {result && (
+          {result && !error && (
             <motion.section
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="pt-6 border-t border-pink-50 overflow-hidden"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="pt-4 border-t border-pink-50"
             >
-              <div className="bg-pink-50/50 rounded-2xl p-6 space-y-4">
+              <div className="bg-gradient-to-br from-pink-50 to-white border border-pink-100 rounded-3xl p-6 space-y-4">
                 <div>
-                  <span className="text-xs font-bold text-pink-400 uppercase tracking-widest">
+                  <span className="text-[10px] font-black text-pink-300 uppercase tracking-[0.2em]">
                     中文譯音標註 (近似音)
                   </span>
-                  <div className="text-4xl font-black text-pink-600 mt-1 flex items-baseline gap-2">
+                  <div className="text-4xl sm:text-5xl font-black text-pink-600 mt-2 flex items-center gap-3">
                     {result.transliteration}
                     <button 
                       onClick={handleReplay}
-                      className="p-2 text-pink-300 hover:text-pink-500 transition-colors active:scale-90"
+                      className="p-3 bg-white rounded-full shadow-md text-pink-400 hover:text-pink-600 transition-all active:scale-90"
                       title="重讀一次"
                     >
                       <Volume2 className="w-6 h-6" />
                     </button>
                   </div>
                 </div>
-                <div className="text-sm text-gray-400">
-                  原文：<span className="italic">{result.original}</span> ({result.languageCode})
+                <div className="text-xs text-gray-400 font-medium bg-white/50 inline-block px-3 py-1 rounded-full border border-pink-50">
+                  原文：<span className="text-gray-600">{result.original}</span> 
+                  <span className="mx-2 text-pink-200">|</span> 
+                  語系：<span className="text-pink-400">{result.languageCode}</span>
                 </div>
               </div>
             </motion.section>
@@ -170,60 +210,83 @@ function App() {
       {/* 設定 Modal */}
       <AnimatePresence>
         {showSettings && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 relative overflow-hidden"
             >
               <div className="absolute top-0 left-0 w-full h-2 bg-pink-500" />
-              <button 
-                onClick={() => setShowSettings(false)}
-                className="absolute top-6 right-6 p-1 text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
-
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 bg-pink-50 rounded-2xl">
-                  <Key className="w-6 h-6 text-pink-500" />
+              
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-pink-50 rounded-2xl">
+                    <Key className="w-6 h-6 text-pink-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-gray-900">API 設定</h2>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Local Storage Only</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">API 設定</h2>
-                  <p className="text-sm text-gray-500">此金鑰僅存於您的瀏覽器中 🔒</p>
-                </div>
+                <button 
+                  onClick={() => setShowSettings(false)}
+                  className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Gemini API Key</label>
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-black text-gray-700">Gemini API Key</label>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[11px] text-pink-500 font-bold hover:underline">申請免費用戶金鑰 →</a>
+                  </div>
                   <input 
                     type="password"
                     value={tempKey}
                     onChange={(e) => setTempKey(e.target.value)}
-                    placeholder="輸入 AIza... 開頭的金鑰"
-                    className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-pink-500 focus:outline-none transition-all"
+                    placeholder="輸入 AIzaSy... 開頭的金鑰"
+                    className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-[1.25rem] focus:border-pink-500 focus:bg-white focus:outline-none transition-all placeholder-gray-300 text-gray-800"
                   />
-                  <p className="text-xs text-gray-400 px-1">
-                    還沒有金鑰？去 <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-pink-500 hover:underline">Google AI Studio</a> 免費申請一個吧。
-                  </p>
+                  <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
+                    <p className="text-[10px] text-pink-600 leading-relaxed font-medium">
+                      🔒 <b>隱私保護：</b> 金鑰僅會存放在您手機的瀏覽器中，不會傳送到任何伺服器，也不會被 GitHub 記錄。
+                    </p>
+                  </div>
                 </div>
 
-                <button 
-                  onClick={handleSaveKey}
-                  className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-colors shadow-lg active:scale-95"
-                >
-                  確認並儲存
-                </button>
+                <div className="flex gap-3">
+                   <button 
+                    onClick={() => {
+                        localStorage.removeItem('gemini_api_key');
+                        setTempKey('');
+                        setApiKey('');
+                        setShowSettings(false);
+                    }}
+                    className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-95"
+                  >
+                    清除重設
+                  </button>
+                  <button 
+                    onClick={handleSaveKey}
+                    className="flex-[2] py-4 bg-gray-900 text-white rounded-2xl font-bold text-lg hover:bg-black transition-all shadow-xl active:scale-95 shadow-gray-200"
+                  >
+                    儲存變更
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      <footer className="mt-12 text-pink-300 text-sm">
-        由 Antigravity 技術夥伴為您打造 🌸
+      <footer className="mt-12 mb-8 text-pink-300 text-[10px] font-bold uppercase tracking-[0.2em] flex flex-col items-center gap-2">
+        <div className="flex items-center gap-2">
+           <span>Created by Antigravity Partner</span>
+           <span className="animate-pulse text-pink-400">🌸</span>
+        </div>
       </footer>
     </div>
   )
