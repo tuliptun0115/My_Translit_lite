@@ -287,6 +287,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
+        <div className="opacity-50">Version: 0.1.2 (Diagnostic Ready)</div>
       </footer>
     </div>
   )
