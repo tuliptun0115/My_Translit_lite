@@ -17,8 +17,9 @@ src/
 ### 2.1 Gemini 2.5 Flash API
 *   **用途**：偵測語言並生成譯音。
 *   **端點**：`v1beta/models/gemini-2.5-flash:generateContent`
-*   **Prompt 策略**：採用嚴格 JSON 守護機制，確保輸出純淨的譯音、原文與語言代碼。
-*   **模型參數**：預設穩定輸出。
+*   **安全性機制**：
+    *   **LocalStorage 儲存**：API Key 不再硬編碼於前端 bundle 中，改由使用者手動輸入並存於本地瀏覽器。
+    *   **環境變數回退**：本地開發仍支援 `.env.local`。
 
 ### 2.2 Web Speech API
 *   **用途**：播放音訊。
