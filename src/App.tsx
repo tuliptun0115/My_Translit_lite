@@ -20,7 +20,6 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [tempKey, setTempKey] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash')
 
   useEffect(() => {
     const savedKey = localStorage.getItem('gemini_api_key')
