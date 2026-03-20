@@ -12,7 +12,7 @@ function App() {
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const [result, setResult] = useState<TranslitResult | null>(null)
   const [availableModels, setAvailableModels] = useState<any[]>([])
-  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash-latest')
+  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash')
   const [isCheckingModels, setIsCheckingModels] = useState(false)
   
   // API Key 狀態管理
@@ -23,7 +23,7 @@ function App() {
 
   useEffect(() => {
     const savedKey = localStorage.getItem('gemini_api_key')
-    const savedModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash-latest'
+    const savedModel = localStorage.getItem('gemini_model') || 'gemini-2.0-flash'
     const envKey = import.meta.env.VITE_GEMINI_API_KEY
     const initialKey = savedKey || envKey || ''
     setApiKey(initialKey)
@@ -137,19 +137,16 @@ function App() {
 
       <main className="w-full max-w-2xl bg-white rounded-3xl shadow-xl p-6 sm:p-8 space-y-6">
         <section className="space-y-2">
-          <div className="flex justify-between items-center px-1">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-              輸入原文 (各國語言)
-            </label>
+          <div className="flex justify-between items-center mb-1">
+            <h2 className="text-sm font-bold text-gray-500">輸入原文 (各國語言)</h2>
             {apiKey && (
-              <span className="text-[10px] text-green-400 font-bold flex items-center gap-1">
-                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                API 已就緒
+              <span className="text-[10px] text-green-500 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                API 就緒 ({selectedModel})
               </span>
             )}
           </div>
           <textarea
-            value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="在此輸入想要學習發音的單字或句子..."
             className="w-full h-32 p-4 text-lg border-2 border-pink-50 rounded-2xl focus:border-pink-500 focus:outline-none transition-all resize-none placeholder-pink-200 text-gray-800 bg-gray-50/30"
@@ -289,7 +286,7 @@ function App() {
                     </button>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.13 (Key-Transparency)</p>
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.14 (Stable-Final)</p>
                     <button 
                       onClick={handleCheckModels}
                       disabled={isCheckingModels}
@@ -386,7 +383,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.13 (Key-Transparency)</div>
+        <div className="opacity-50">Version: 0.1.14 (Stable-Final)</div>
       </footer>
     </div>
   )
