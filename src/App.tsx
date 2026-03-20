@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Languages, Volume2, Sparkles, RefreshCw, Settings, X, Key } from 'lucide-react'
+import { Languages, Volume2, Sparkles, RefreshCw, Settings, X, Key, Eye, EyeOff } from 'lucide-react'
 import { cn } from './utils/cn'
 import { motion, AnimatePresence } from 'framer-motion'
 import { fetchTransliteration, type TranslitResult } from './services/gemini'
@@ -16,6 +16,7 @@ function App() {
   const [apiKey, setApiKey] = useState('')
   const [showSettings, setShowSettings] = useState(false)
   const [tempKey, setTempKey] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   // 初始化讀取 LocalStorage 或 Env
   useEffect(() => {
@@ -243,13 +244,22 @@ function App() {
                     <label className="text-sm font-black text-gray-700">Gemini API Key</label>
                     <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[11px] text-pink-500 font-bold hover:underline">申請免費用戶金鑰 →</a>
                   </div>
-                  <input 
-                    type="password"
-                    value={tempKey}
-                    onChange={(e) => setTempKey(e.target.value)}
-                    placeholder="輸入 AIzaSy... 開頭的金鑰"
-                    className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-[1.25rem] focus:border-pink-500 focus:bg-white focus:outline-none transition-all placeholder-gray-300 text-gray-800"
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? "text" : "password"}
+                      value={tempKey}
+                      onChange={(e) => setTempKey(e.target.value)}
+                      placeholder="輸入 AIzaSy... 開頭的金鑰"
+                      className="w-full p-4 pr-12 bg-gray-50 border-2 border-transparent rounded-[1.25rem] focus:border-pink-500 focus:bg-white focus:outline-none transition-all placeholder-gray-300 text-gray-800"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" /> }
+                    </button>
+                  </div>
                   <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
                     <p className="text-[10px] text-pink-600 leading-relaxed font-medium">
                       🔒 <b>隱私保護：</b> 金鑰僅會存放在您手機的瀏覽器中，不會傳送到任何伺服器，也不會被 GitHub 記錄。
