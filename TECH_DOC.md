@@ -18,7 +18,12 @@ src/
 *   **用途**：偵測語言並生成譯音。
 *   **端點**：`v1/models/gemini-1.5-flash:generateContent` (Stable)
 *   **安全性機制**：
-    *   **LocalStorage 儲存**：API Key 不再硬編碼於前端 bundle 中，改由使用者手動輸入並存於本地瀏覽器。
+    * 使用 Local Storage 儲存金鑰（`gemini_api_key`）與目前選擇的模型（`gemini_model`）。
+  * 實作**金鑰透明化（Key Transparency）**，報錯時在 UI 明確顯示金鑰末四碼。
+  * **自主修復與配額偵測（Autonomous Self-Healing）**：
+    1. 首頁載入時，若發現使用的為預設模型，背景將自動列出可用的 Gemini 模型清單。
+    2. 自動對清單（前五名模型）發送微小的 Probe API 請求來測試可用性與 `RESOURCE_EXHAUSTED` (Limit: 0) 狀態。
+    3. 自動將第一個收到 `200 OK` 的模型定為使用中模型，保證服務穩定性。
     *   **環境變數回退**：本地開發仍支援 `.env.local`。
 
 ### 2.2 Web Speech API
