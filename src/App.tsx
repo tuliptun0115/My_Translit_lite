@@ -12,6 +12,7 @@ function App() {
   const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const [result, setResult] = useState<TranslitResult | null>(null)
   const [availableModels, setAvailableModels] = useState<any[]>([])
+  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash-latest')
   const [isCheckingModels, setIsCheckingModels] = useState(false)
   
   // API Key 狀態管理
@@ -23,7 +24,7 @@ function App() {
 
   useEffect(() => {
     const savedKey = localStorage.getItem('gemini_api_key')
-    const savedModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash'
+    const savedModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash-latest'
     const envKey = import.meta.env.VITE_GEMINI_API_KEY
     const initialKey = savedKey || envKey || ''
     setApiKey(initialKey)
@@ -92,6 +93,11 @@ function App() {
     try {
       const models = await listModels(tempKey.trim())
       setAvailableModels(models)
+      // 自動選取第一個可用的模型
+      if (models.length > 0) {
+        const firstModel = models[0].name.split('/').pop()
+        setSelectedModel(firstModel)
+      }
     } catch (err: any) {
       setError(`取得模型列表失敗: ${err.message}`)
     } finally {
@@ -284,7 +290,7 @@ function App() {
                     </button>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.11 (Force-Clean)</p>
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.12 (Auto-Select)</p>
                     <button 
                       onClick={handleCheckModels}
                       disabled={isCheckingModels}
@@ -381,7 +387,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.11 (Force-Clean)</div>
+        <div className="opacity-50">Version: 0.1.12 (Auto-Select)</div>
       </footer>
     </div>
   )
