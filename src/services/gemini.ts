@@ -3,7 +3,6 @@
  * 負責處理語言偵測與母語近似音譯音生成。
  */
 
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
 export interface TranslitResult {
   original: string;
