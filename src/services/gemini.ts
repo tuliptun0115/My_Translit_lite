@@ -62,6 +62,20 @@ export async function fetchTransliteration(text: string, apiKey: string, modelId
     throw new Error("無法解析 AI 回傳的 JSON 格式");
   }
 }
+export async function testModel(apiKey: string, modelId: string): Promise<boolean> {
+  const cleanKey = apiKey.trim().replace(/[\s\u200B-\u200D\uFEFF]/g, "");
+  const dynamicUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent`;
+  try {
+    const response = await fetch(`${dynamicUrl}?key=${encodeURIComponent(cleanKey)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] }),
+    });
+    return response.ok;
+  } catch (e) {
+    return false;
+  }
+}
 export async function listModels(apiKey: string) {
   const cleanKey = apiKey.trim().replace(/[\s\u200B-\u200D\uFEFF]/g, "");
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(cleanKey)}`);

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Languages, Volume2, Sparkles, RefreshCw, Settings, X, Key } from 'lucide-react'
 import { cn } from './utils/cn'
 import { motion, AnimatePresence } from 'framer-motion'
-import { fetchTransliteration, listModels, type TranslitResult } from './services/gemini'
+import { fetchTransliteration, listModels, testModel, type TranslitResult } from './services/gemini'
 import { speak, preWarmTTS } from './services/tts'
 
 function App() {
@@ -90,17 +90,35 @@ function App() {
     setIsCheckingModels(true)
     setError(null)
     try {
-      const models = await listModels(tempKey.trim())
-      setAvailableModels(models)
-      // 自動選取第一個可用的模型
-      if (models.length > 0) {
-        const firstModel = models[0].name.split('/').pop()
-        setSelectedModel(firstModel)
+      const models = await listModels(tempKey.trim());
+      setAvailableModels(models);
+      
+      // 自愈連線：嘗試前幾個模型找到有配額的
+      setError("偵測到可用模型，正在自動測試連線品質...");
+      const topModels = models.slice(0, 5);
+      let foundWorkingModel = false;
+
+      for (const m of topModels) {
+        const mName = m.name.split('/').pop();
+        const ok = await testModel(tempKey.trim(), mName);
+        if (ok) {
+          setSelectedModel(mName);
+          localStorage.setItem('gemini_model', mName);
+          foundWorkingModel = true;
+          break;
+        }
       }
+
+      if (foundWorkingModel) {
+        setError(null);
+      } else {
+        setError("偵測到模型但均無配額 (Limit: 0)，請稍後再試或確認 Google AI Studio 狀態。");
+      }
+
     } catch (err: any) {
-      setError(`取得模型列表失敗: ${err.message}`)
+      setError(`取得模型列表失敗: ${err.message}`);
     } finally {
-      setIsCheckingModels(false)
+      setIsCheckingModels(false);
     }
   }
 
@@ -286,7 +304,7 @@ function App() {
                     </button>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.14 (Stable-Final)</p>
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.15 (Self-Healing)</p>
                     <button 
                       onClick={handleCheckModels}
                       disabled={isCheckingModels}
@@ -383,7 +401,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.14 (Stable-Final)</div>
+        <div className="opacity-50">Version: 0.1.15 (Self-Healing)</div>
       </footer>
     </div>
   )
