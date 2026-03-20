@@ -39,18 +39,25 @@ export async function fetchTransliteration(text: string, apiKey: string): Promis
   });
 
   if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error("401"); // 授權錯誤
-    }
-    throw new Error(`API 請求失敗: ${response.status}`);
+    const data = await response.json();
+    const errorMsg = data.error?.message || response.statusText;
+    const errorCode = data.error?.status || response.status;
+    throw new Error(`API請求失敗: ${errorCode} - ${errorMsg}`);
   }
 
   const data = await response.json();
+  
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!content) {
+    throw new Error("API 回傳格式錯誤或無內容");
+  }
+
   try {
-    const content = data.candidates[0].content.parts[0].text;
-    return JSON.parse(content);
-  } catch (error) {
-    console.error("JSON 解析失敗:", error);
-    throw new Error("解析 AI 回傳資料時發生錯誤");
+    // 移除可能存在的 Markdown 程式碼區塊標記
+    const cleanJson = content.replace(/```json\n?|\n?```/g, "").trim();
+    return JSON.parse(cleanJson);
+  } catch (e) {
+    console.error("JSON Parsing Error:", content);
+    throw new Error("無法解析 AI 回傳的 JSON 格式");
   }
 }
