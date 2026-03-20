@@ -69,7 +69,6 @@ function App() {
     } catch (err: any) {
       console.error('API Error:', err)
       const errStr = err.toString()
-      const keyPrefix = apiKey ? `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}` : "無金鑰"
       setErrorDetail(`[金鑰末四碼: ${apiKey.slice(-4)}] ${errStr}`)
 
       if (errStr.includes('401') || errStr.toLowerCase().includes('key not valid') || errStr.includes('403')) {
