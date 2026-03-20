@@ -255,10 +255,14 @@ function App() {
                     <button 
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/10 px-2 py-1 rounded-md text-[10px] font-black text-pink-500 border border-pink-200 shadow-sm active:bg-pink-50"
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" /> }
+                      {showPassword ? "隱藏" : "顯示"}
                     </button>
+                  </div>
+                  <div className="flex justify-between items-center px-1">
+                    <p className="text-[9px] text-gray-400 font-bold">目前版本：v0.1.3 (Stable-1.5)</p>
+                    <p className="text-[9px] text-red-400 font-bold">如持續報錯請檢查金鑰正確性</p>
                   </div>
                   <div className="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
                     <p className="text-[10px] text-pink-600 leading-relaxed font-medium">
@@ -297,7 +301,7 @@ function App() {
            <span>Created by Antigravity Partner</span>
            <span className="animate-pulse text-pink-400">🌸</span>
         </div>
-        <div className="opacity-50">Version: 0.1.2 (Diagnostic Ready)</div>
+        <div className="opacity-50">Version: 0.1.3 (Stable-1.5)</div>
       </footer>
     </div>
   )
