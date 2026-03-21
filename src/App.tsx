@@ -5,6 +5,33 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { fetchTransliteration, listModels, testModel, type TranslitResult } from './services/gemini'
 import { speak, preWarmTTS } from './services/tts'
 
+// 安全的 LocalStorage 存取工具，避免 Safari 安全性錯誤導致崩潰
+const safeStorage = {
+  getItem: (key: string) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn("LocalStorage access denied", e);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn("LocalStorage write denied", e);
+    }
+  },
+  clear: () => {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {}
+  }
+};
+
+
+
 function App() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -22,22 +49,24 @@ function App() {
   const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('gemini_api_key')
-    const savedModel = localStorage.getItem('gemini_model') || 'gemini-2.0-flash'
-    const envKey = import.meta.env.VITE_GEMINI_API_KEY
-    const initialKey = savedKey || envKey || ''
-    setApiKey(initialKey)
-    setTempKey(initialKey)
-    setSelectedModel(savedModel)
-    
-    // 如果有 Key 但模型是預設的，主動嘗試偵測一個活的模型
-    if (initialKey && savedModel === 'gemini-2.0-flash') {
-      handleCheckModelsDirectly(initialKey);
-    }
+    try {
+      const savedKey = safeStorage.getItem('gemini_api_key')
+      const savedModel = safeStorage.getItem('gemini_model') || 'gemini-2.0-flash'
+      const envKey = import.meta.env.VITE_GEMINI_API_KEY
+      const initialKey = savedKey || envKey || ''
+      setApiKey(initialKey)
+      setTempKey(initialKey)
+      setSelectedModel(savedModel)
+      
+      if (initialKey && savedModel === 'gemini-2.0-flash') {
+        handleCheckModelsDirectly(initialKey);
+      }
 
-    // 如果沒有 Key，主動提示設定 (延遲一下確保 UI 已載入)
-    if (!initialKey) {
-      setTimeout(() => setShowSettings(true), 500)
+      if (!initialKey) {
+        setTimeout(() => setShowSettings(true), 1000)
+      }
+    } catch (e) {
+      console.error("Initialization error", e);
     }
   }, [])
 
@@ -51,7 +80,7 @@ function App() {
         const mName = m.name.split('/').pop();
         if (await testModel(key, mName)) {
           setSelectedModel(mName);
-          localStorage.setItem('gemini_model', mName);
+          safeStorage.setItem('gemini_model', mName);
           break;
         }
       }
@@ -65,8 +94,8 @@ function App() {
       setError("金鑰不能為空")
       return
     }
-    localStorage.setItem('gemini_api_key', trimmedKey)
-    localStorage.setItem('gemini_model', selectedModel)
+    safeStorage.setItem('gemini_api_key', trimmedKey)
+    safeStorage.setItem('gemini_model', selectedModel)
     setApiKey(trimmedKey)
     setShowSettings(false)
     setError(null)
@@ -88,20 +117,23 @@ function App() {
     try {
       const res = await fetchTransliteration(input, apiKey, selectedModel)
       setResult(res)
+      // 在 iOS 上，speak 必須儘可能靠近使用者點擊行為
       speak(res.original, res.languageCode)
     } catch (err: any) {
       console.error('API Error:', err)
       const errStr = err.toString()
-      setErrorDetail(`[金鑰末四碼: ${apiKey.slice(-4)}] ${errStr}`)
+      setErrorDetail(`[連線型號: ${selectedModel}] [金鑰末四碼: ${apiKey.slice(-4)}] ${errStr}`)
 
-      if (errStr.includes('401') || errStr.toLowerCase().includes('key not valid') || errStr.includes('403')) {
-        setError('API Key 無效或權限不足，請檢查設定。')
+      if (errStr.includes('429') || errStr.toLowerCase().includes('resource_exhausted')) {
+        setError('免費額度已達上限 (15 RPM)，請稍候 1 分鐘再試，或檢查 Google AI Studio 是否限制了您的配額。🌸')
+      } else if (errStr.includes('401') || errStr.toLowerCase().includes('key not valid') || errStr.includes('403')) {
+        setError('API Key 無效或權限不足（請確認是否已在 AI Studio 建立 Project）。')
       } else if (errStr.includes('404')) {
-        setError('找不到 AI 模型，可能是型號名稱不正確，請回報給技術夥伴。')
+        setError('找不到 AI 模型，可能該型號不支援您的區域，請點擊設定切換不同型號。')
       } else if (errStr.includes('TypeError') || errStr.includes('Failed to fetch')) {
-        setError('連線被阻擋或網路不穩定，請確認手機是否可連至 Google。')
+        setError('連線失敗！iPhone 常見原因：1. 網路環境封鎖 Google API (需 VPN) 2. 瀏覽器阻擋跨網域請求。')
       } else {
-        setError('哎呀！連線出了一點小問題，請點擊下方詳情查看。🌸')
+        setError('哎呀！連線出了一點小問題，可能是因為 AI 回傳格式不符合預期。🌸')
       }
     } finally {
       setIsLoading(false)
@@ -126,7 +158,7 @@ function App() {
         const ok = await testModel(tempKey.trim(), mName);
         if (ok) {
           setSelectedModel(mName);
-          localStorage.setItem('gemini_model', mName);
+          safeStorage.setItem('gemini_model', mName);
           foundWorkingModel = true;
           break;
         }
@@ -139,7 +171,14 @@ function App() {
       }
 
     } catch (err: any) {
-      setError(`取得模型列表失敗: ${err.message}`);
+      const errStr = err.toString();
+      if (errStr.includes('429')) {
+        setError("額度已耗盡 (429)，請檢查 Google AI Studio 狀態或稍後再試。");
+      } else if (errStr.includes('403') || errStr.includes('401')) {
+        setError("金鑰無效 (403/401)，請確認金鑰是否正確。");
+      } else {
+        setError(`取得模型列表失敗: ${err.message}`);
+      }
     } finally {
       setIsCheckingModels(false);
     }
@@ -387,8 +426,7 @@ function App() {
                   <div className="flex gap-3">
                     <button 
                       onClick={() => {
-                          localStorage.clear();
-                          sessionStorage.clear();
+                          safeStorage.clear();
                           window.location.href = window.location.pathname + '?t=' + Date.now();
                       }}
                       className="flex-1 py-3 bg-red-50 text-red-500 rounded-2xl font-bold text-xs hover:bg-red-100 transition-all active:scale-95 border border-red-100"
@@ -397,7 +435,7 @@ function App() {
                     </button>
                     <button 
                       onClick={() => {
-                          localStorage.removeItem('gemini_api_key');
+                          try { localStorage.removeItem('gemini_api_key'); } catch(e){}
                           setTempKey('');
                           setApiKey('');
                       }}

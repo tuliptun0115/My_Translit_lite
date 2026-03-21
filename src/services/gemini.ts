@@ -12,7 +12,9 @@ export interface TranslitResult {
 
 export async function fetchTransliteration(text: string, apiKey: string, modelId: string = "gemini-1.5-flash"): Promise<TranslitResult> {
   const cleanKey = apiKey.trim().replace(/[\s\u200B-\u200D\uFEFF]/g, "");
-  const dynamicUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent`;
+  // 使用 v1 穩定版端點 (1.5 系列最佳實踐)
+  const apiVersion = modelId.includes('2.0') ? 'v1beta' : 'v1';
+  const dynamicUrl = `https://generativelanguage.googleapis.com/${apiVersion}/models/${modelId}:generateContent`;
   // 增加更嚴格的 Prompt 確保回傳純 JSON
   const prompt = `你是一個專業的語音譯音專家。請偵測以下輸入文字的語言，並將其轉換為最接近發音的「中文譯音」（以漢字表示，這也被稱為母語近似音標註）。
 
@@ -31,6 +33,7 @@ export async function fetchTransliteration(text: string, apiKey: string, modelId
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Accept": "application/json"
     },
     body: JSON.stringify({
       contents: [{
@@ -40,9 +43,15 @@ export async function fetchTransliteration(text: string, apiKey: string, modelId
   });
 
   if (!response.ok) {
-    const data = await response.json();
-    const errorMsg = data.error?.message || response.statusText;
-    const errorCode = data.error?.status || response.status;
+    let errorMsg = response.statusText;
+    let errorCode = response.status;
+    try {
+      const data = await response.json();
+      errorMsg = data.error?.message || errorMsg;
+      errorCode = data.error?.status || errorCode;
+    } catch (e) {
+      // 如果不是 JSON，維持 statusText
+    }
     throw new Error(`API請求失敗: ${errorCode} - ${errorMsg}`);
   }
 
@@ -64,11 +73,15 @@ export async function fetchTransliteration(text: string, apiKey: string, modelId
 }
 export async function testModel(apiKey: string, modelId: string): Promise<boolean> {
   const cleanKey = apiKey.trim().replace(/[\s\u200B-\u200D\uFEFF]/g, "");
-  const dynamicUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent`;
+  const apiVersion = modelId.includes('2.0') ? 'v1beta' : 'v1';
+  const dynamicUrl = `https://generativelanguage.googleapis.com/${apiVersion}/models/${modelId}:generateContent`;
   try {
     const response = await fetch(`${dynamicUrl}?key=${encodeURIComponent(cleanKey)}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
       body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] }),
     });
     return response.ok;
@@ -78,7 +91,10 @@ export async function testModel(apiKey: string, modelId: string): Promise<boolea
 }
 export async function listModels(apiKey: string) {
   const cleanKey = apiKey.trim().replace(/[\s\u200B-\u200D\uFEFF]/g, "");
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(cleanKey)}`);
+  // 使用 v1 穩定版獲取模型列表
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${encodeURIComponent(cleanKey)}`, {
+    headers: { "Accept": "application/json" }
+  });
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error?.message || "無法取得模型列表");

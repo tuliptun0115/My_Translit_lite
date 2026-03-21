@@ -14,16 +14,17 @@ src/
 
 ## 2. API 規格
 
-### 2.1 Gemini 1.5 Flash API
+### 2.1 Gemini 1.5/2.0 API
 *   **用途**：偵測語言並生成譯音。
-*   **端點**：`v1/models/gemini-1.5-flash:generateContent` (Stable)
+*   **端點**：
+    *   Gemini 1.5: `v1/models/{modelId}:generateContent` (穩定版)
+    *   Gemini 2.0: `v1beta/models/{modelId}:generateContent`
 *   **安全性機制**：
     * 使用 Local Storage 儲存金鑰（`gemini_api_key`）與目前選擇的模型（`gemini_model`）。
   * 實作**金鑰透明化（Key Transparency）**，報錯時在 UI 明確顯示金鑰末四碼。
-  * **自主修復與配額偵測（Autonomous Self-Healing）**：
+  * **自主修復與配額偵測 (Autonomous Self-Healing)**：
     1. 首頁載入時，若發現使用的為預設模型，背景將自動列出可用的 Gemini 模型清單。
-    2. 自動對清單（前五名模型）發送微小的 Probe API 請求來測試可用性與 `RESOURCE_EXHAUSTED` (Limit: 0) 狀態。
-    3. 自動將第一個收到 `200 OK` 的模型定為使用中模型，保證服務穩定性。
+    2. 自動發送測試請求 (Probes) 以避開 `RESOURCE_EXHAUSTED` (429) 或無效模型。
     *   **環境變數回退**：本地開發仍支援 `.env.local`。
 
 ### 2.2 Web Speech API
@@ -49,7 +50,12 @@ interface TranslitResult {
 ### 4.1 指數退避 (Exponential Backoff)
 針對 API 請求失敗，實作 1s, 2s, 4s 的重試機制。
 
-### 4.2 JSON 解析守護
+### 4.2 跨裝置相容性優化 (iPhone/Mobile)
+*   **API 穩定版優先**：優先使用 `v1` 端點降低連線波動。
+*   **精準錯誤映射**：區分 `429` (額度)、`401/403` (金鑰)、`Failed to fetch` (網路阻擋)，提供移動端具體修補指引。
+*   **Headers 優化**：強制使用 `Accept: application/json` 確保 Safari 回傳解析穩定。
+
+### 4.3 JSON 解析守護
 API 回傳內容可能包含 ```json ... ``` 標記，封裝解析函數：
 ```javascript
 const safeParseJSON = (text) => {
