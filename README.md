@@ -33,5 +33,19 @@
 *   **樣式**: Tailwind CSS (v4)
 *   **AI**: Google Gemini API (1.5 Flash / 2.0 Flash)
 
+## 💰 使用服務與費用說明
+
+本專案採用「無後端架構」，所有 AI 運算皆透過使用者提供的 API 金鑰直接與服務商連線：
+
+*   **調用模型**：
+    *   **Web Speech API (TTS)**：瀏覽器原生語音引擎（負責語音合成播放），**完全免費且無額度限制**。
+    *   **Gemini 1.5/2.0 Flash**：由 Google AI 提供，負責語言偵測與譯音生成。
+*   **API KEY 來源**：
+    *   **Google AI Studio**，預設建議使用**免費版 (Free Tier)**。
+*   **預估每日使用限制 (免費額度)**：
+    *   **每日請求 (RPD)**：1,500 次。
+    *   **每分鐘請求 (RPM)**：15 次 (1.5 Flash) / 10 次 (2.0 Flash)。
+*   **隱私說明**：所有 API 金鑰僅儲存於您的瀏覽器 Local Storage，安全性高且不會上傳至開發者伺服器。
+
 ---
 *Created with ❤️ by Antigravity Technical Partner.*
