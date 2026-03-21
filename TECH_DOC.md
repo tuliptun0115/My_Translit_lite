@@ -1,84 +1,59 @@
-# My_Translit_lite - TECH_DOC (技術開發文件)
+# 好好唸 - 技術開發文件 (TECH_DOC)
 
 ## 1. 系統架構
 
 ### 1.1 前端專案結構
-採用 Vite + React (TypeScript) 建構。
+本專案採用 Vite + React (TypeScript) 進行開發，完全無須後端伺服器，所有邏輯皆在使用者瀏覽器執行。
 
 ```text
 src/
-├── services/           # API 服務 (Gemini API, TTS Service)
-├── utils/              # 工具函數 (cn helper)
-└── App.tsx             # 主要邏輯與佈局控制
+├── services/           # API 服務 (Gemini API, TTS 語音服務)
+├── utils/              # 工具函數 (cn 類別整合輔助)
+└── App.tsx             # 主要應用程式邏輯、狀態與佈局
 ```
 
-## 2. API 規格
+## 2. API 規格與連線
 
-### 2.1 Gemini 1.5/2.0 API
-*   **用途**：偵測語言並生成譯音。
-*   **端點**：
-    *   Gemini 1.5: `v1/models/{modelId}:generateContent` (穩定版)
-    *   Gemini 2.0: `v1beta/models/{modelId}:generateContent`
-*   **安全性機制**：
-    * 使用 Local Storage 儲存金鑰（`gemini_api_key`）與目前選擇的模型（`gemini_model`）。
-  * 實作**金鑰透明化（Key Transparency）**，報錯時在 UI 明確顯示金鑰末四碼。
-  * **自主修復與配額偵測 (Autonomous Self-Healing)**：
-    1. 首頁載入時，若發現使用的為預設模型，背景將自動列出可用的 Gemini 模型清單。
-    2. 自動發送測試請求 (Probes) 以避開 `RESOURCE_EXHAUSTED` (429) 或無效模型。
-    *   **環境變數回退**：本地開發仍支援 `.env.local`。
+### 2.1 Gemini 1.5/2.0 AI 模型
+*   **用途**：負責自動語言偵測與生成精準的「母語近似音」中文譯音。
+*   **連線端點**：
+    *   Gemini 1.5 系列：`v1/models/{modelId}:generateContent` (穩定版)
+    *   Gemini 2.0 系列：`v1beta/models/{modelId}:generateContent` (實驗版)
+*   **安全性與隱私**：
+    *   **本地存儲**：所有 API 金鑰僅儲存於瀏覽器的 Local Storage，不會傳送到伺服器。
+    *   **透明化**：發生錯誤時，頁面會顯示金鑰末四碼供使用者確認。
+*   **智能自癒機制 (Self-Healing)**：
+    *   系統會自動掃描可用的 Gemini 模型清單。
+    *   自動對多個模型發送微小的 Probe 測試請求，以避開配額耗盡 (429) 的模型。
 
-### 2.2 Web Speech API
-*   **用途**：播放音訊。
-*   **流程**：
-    1.  初始化 `SpeechSynthesisUtterance`。
-    2.  根據 `languageCode` 過濾 `window.speechSynthesis.getVoices()`。
-    3.  預喚醒語音引擎（在使用者點擊按鈕時立即調用空的 `speak`）。
+### 2.2 Web Speech API (語音播放)
+*   **用途**：調用裝置本地的語音合成引擎進行朗讀。
+*   **高品質語音優化 (Premium Voice Selection)**：
+    *   自動過濾並優先挑選名稱中包含 "Natural"、"Premium"、"Siri" 或 "Enhanced" 的優質人聲。
+    *   自動調整語速與語調（預設音率約 0.85x - 0.9x）以提升學習效果。
 
-## 3. 資料結構
+## 3. 資料交換格式
 
-### 3.1 翻譯結果物件
+### 3.1 譯音結果物件
 ```typescript
 interface TranslitResult {
-  original: string;
-  transliteration: string;
-  languageCode: string; // 例如: 'en-US', 'ja-JP', 'ko-KR'
+  original: string;         // 原文
+  transliteration: string;  // 中文譯音標註
+  languageCode: string;     // ISO 語言代碼 (如: 'ja-JP')
 }
 ```
 
-## 4. 錯誤處理與穩定性
+## 4. 錯誤處理與 iPhone 相容性
 
-### 4.1 指數退避 (Exponential Backoff)
-針對 API 請求失敗，實作 1s, 2s, 4s 的重試機制。
+### 4.1 指數退避重試 (Exponential Backoff)
+針對網路不穩定或 API 暫時性繁忙，系統會依序以 1秒、2秒、4秒的間隔進行自動重試。
 
-### 4.2 跨裝置相容性優化 (iPhone/Mobile)
-*   **API 穩定版優先**：優先使用 `v1` 端點降低連線波動。
-*   **精準錯誤映射**：區分 `429` (額度)、`401/403` (金鑰)、`Failed to fetch` (網路阻擋)，提供移動端具體修補指引。
-*   **Headers 優化**：強制使用 `Accept: application/json` 確保 Safari 回傳解析穩定。
+### 4.2 iPhone (Safari) 專用優化策略
+*   **API 韌性**：預設添加 `Accept: application/json` 標頭，解決 Safari 部分版本解析 JSON 的異常。
+*   **精準錯誤映射**：將錯誤區分為「額度用盡 (429)」、「授權失敗 (401/403)」與「網路阻擋 (Failed to fetch)」，並針對 iPhone 給予具體的連線指引。
+*   **主畫面圖標 (App Icon)**：配置 `apple-touch-icon`，使用者可將本網頁「加入主畫面」作為原生 App 使用。
 
-### 4.3 JSON 解析守護
-API 回傳內容可能包含 ```json ... ``` 標記，封裝解析函數：
-```javascript
-const safeParseJSON = (text) => {
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  return jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-};
-```
+## 5. 費用與配額預測 (API Cost)
 
-## 6. 費用預估 (API Cost Estimation)
-
-基於 **Gemini 1.5/2.0/2.5 Flash** 系列模型的計費標準，以下為預估費用（假設單次請求平均 200 input tokens / 100 output tokens）：
-
-### 6.1 免費層級 (Free Tier)
-*   **額度**：15 RPM (每分鐘請求數) / 1,500 RPD (每日請求數)。
-*   **費用**：$0 (適合開發與小規模個人使用)。
-
-### 6.2 付費層級 (Pay-as-you-go) - 以 1,000 次使用為單位
-| 模型類型 | 1,000 次請求預估費用 (USD) | 備註 |
-| :--- | :--- | :--- |
-| **Gemini 1.5 Flash** | ~$0.045 | 極度廉價，適合初期上線。 |
-| **Gemini 2.5 Flash** | ~$0.31 | 效能平衡版。 |
-| **Gemini 2.5 Flash-Lite** | ~$0.06 | 高性價比選擇。 |
-
-### 6.3 重要說明 (Crucial Note)
-*   **非自動切換**：免費層級與付費層級是分開的。在 Google AI Studio 中，若使用「免費 API Key」，當達到 15 RPM 或 1,500 RPD 限制時，API 會回傳 **429 錯誤**（請求過多），而**不會自動轉為扣費**。
-*   **建議**：初期開發與個人使用請選擇「免費層級」即可。若未來流量成長，需手動建立具備「付費權限」的 API Key，屆時才會開始產生費用。
+*   **免費層級 (Free Tier)**：每日 1,500 次請求。這是本專案的預設使用方式。
+*   **付費層級**：若流量極大，可手動切換為 Pay-as-you-go 模式。
